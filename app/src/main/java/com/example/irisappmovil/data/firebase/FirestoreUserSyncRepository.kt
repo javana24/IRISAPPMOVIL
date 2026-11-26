@@ -3,6 +3,7 @@ package com.example.irisappmovil.data.firebase
 import com.example.irisappmovil.data.local.dojo.DojoModuleDao
 import com.example.irisappmovil.data.local.dojo.DojoModuleDefaults
 import com.example.irisappmovil.data.local.dojo.DojoModuleEntity
+import com.example.irisappmovil.data.local.dojo.DojoModuleStatus
 import com.example.irisappmovil.data.local.usuarios.UserDao
 import com.example.irisappmovil.data.local.usuarios.UserEntity
 import com.example.irisappmovil.domain.LevelSystem
@@ -61,29 +62,33 @@ class FirestoreUserSyncRepository @Inject constructor(
         userDao.deactivateAll()
         userDao.insertUser(entity)
 
+        // Progreso del Dojo compartido con la web: se parte de los 4 módulos por defecto y se
+        // aplica encima lo guardado en la nube. La web antigua usaba ids white/yellow/purple/black.
         val modulosSnap = ref.collection(FirestoreConstants.SUBCOLECCION_MODULOS_DOJO).get().await()
-        if (!modulosSnap.isEmpty) {
-            val lista = modulosSnap.documents.mapNotNull { doc ->
-                val m = doc.data ?: return@mapNotNull null
-                DojoModuleEntity(
-                    id = m[FirestoreConstants.CAMPO_ID_MODULO] as? String ?: doc.id,
-                    title = m[FirestoreConstants.CAMPO_TITULO] as? String ?: "",
-                    description = m[FirestoreConstants.CAMPO_DESCRIPCION] as? String ?: "",
-                    iconType = m[FirestoreConstants.CAMPO_TIPO_ICONO] as? String ?: "EYE",
-                    status = m[FirestoreConstants.CAMPO_ESTADO] as? String ?: "LOCKED",
-                    order = (m[FirestoreConstants.CAMPO_ORDEN] as? Number)?.toInt() ?: 0,
-                    xpReward = (m[FirestoreConstants.CAMPO_XP_RECOMPENSA] as? Number)?.toInt() ?: 500,
-                    completedAt = (m[FirestoreConstants.CAMPO_COMPLETADO_EN_MS] as? Number)?.toLong()
-                )
+        val completados = modulosSnap.documents.mapNotNull { doc ->
+            val m = doc.data ?: return@mapNotNull null
+            val estado = m[FirestoreConstants.CAMPO_ESTADO] as? String
+            if (estado != DojoModuleStatus.COMPLETED.raw) return@mapNotNull null
+            val id = normalizarIdModulo(m[FirestoreConstants.CAMPO_ID_MODULO] as? String ?: doc.id)
+                ?: return@mapNotNull null
+            id to (m[FirestoreConstants.CAMPO_COMPLETADO_EN_MS] as? Number)?.toLong()
+        }.toMap()
+
+        val base = DojoModuleDefaults.modulosIniciales().sortedBy { it.order }
+        var siguienteDesbloqueado = false
+        val lista = base.map { modulo ->
+            when {
+                completados.containsKey(modulo.id) ->
+                    modulo.copy(status = DojoModuleStatus.COMPLETED.raw, completedAt = completados[modulo.id])
+                !siguienteDesbloqueado -> {
+                    siguienteDesbloqueado = true
+                    modulo.copy(status = DojoModuleStatus.IN_PROGRESS.raw, completedAt = null)
+                }
+                else -> modulo.copy(status = DojoModuleStatus.LOCKED.raw, completedAt = null)
             }
-            if (lista.isNotEmpty()) {
-                dojoModuleDao.deleteAllModules()
-                dojoModuleDao.insertModules(lista)
-            }
-        } else {
-            dojoModuleDao.deleteAllModules()
-            dojoModuleDao.insertModules(DojoModuleDefaults.modulosIniciales())
         }
+        dojoModuleDao.deleteAllModules()
+        dojoModuleDao.insertModules(lista)
 
         // Limpia chats o estados de ánimo subidos por versiones antiguas de la app.
         runCatching { purgeSensitiveCloudData(uid) }
@@ -160,6 +165,15 @@ class FirestoreUserSyncRepository @Inject constructor(
             FirestoreConstants.SUBCOLECCION_ENTRADAS_ESTADO_ANIMO
         ).forEach { name -> deleteCollection(ref.collection(name)) }
         ref.delete().await()
+    }
+
+    /** mod_01…mod_04, o los ids antiguos de la web (white, yellow, purple, black). */
+    private fun normalizarIdModulo(id: String): String? = when (id) {
+        "mod_01", "white" -> "mod_01"
+        "mod_02", "yellow" -> "mod_02"
+        "mod_03", "purple" -> "mod_03"
+        "mod_04", "black" -> "mod_04"
+        else -> null
     }
 
     private suspend fun deleteCollection(collection: com.google.firebase.firestore.CollectionReference) {
