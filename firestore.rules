@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Solo Cloud Functions (admin SDK) — el cliente nunca escribe aquí
+    match /codigos_verificacion_correo/{docId} {
+      allow read, write: if false;
+    }
+    match /verificaciones_correo_exitosas/{docId} {
+      allow read, write: if false;
+    }
+
+    // Datos de la app IRIS por usuario autenticado (uid = id de Firebase Auth)
+    match /usuarios/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /{subcollection=**} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Todo lo demás denegado (equivalente a tu regla anterior con document=**)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

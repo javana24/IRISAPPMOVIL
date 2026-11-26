@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.IrisApp" parent="Theme.AppCompat.Light.NoActionBar" />
+    <style name="Theme.IrisApp.SplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#0D0D0F</item>
+        <item name="postSplashScreenTheme">@style/Theme.IrisApp</item>
+    </style>
+</resources>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   Reglas de copia de seguridad en la nube (Android 12+).
+   Excluimos la base Room local para no subir datos de sesión simulador/Dojo por defecto.
+   Ajustad <include>/<exclude> según política del equipo.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="iris_database" />
+        <exclude domain="database" path="iris_database-shm" />
+        <exclude domain="database" path="iris_database-wal" />
+    </cloud-backup>
+</data-extraction-rules>

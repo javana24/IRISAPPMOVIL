@@ -1,0 +1,175 @@
+<resources>
+    <string name="app_name">IRIS Móvil</string>
+
+    <!-- Auth -->
+    <string name="auth_welcome_title">Bienvenida a IRIS</string>
+    <string name="auth_login_subtitle">Inicia sesión para continuar</string>
+    <string name="auth_email">Correo electrónico</string>
+    <string name="auth_password">Contraseña</string>
+    <string name="auth_login">Entrar</string>
+    <string name="auth_create_account">Crear cuenta</string>
+    <string name="auth_register_title">Crear cuenta</string>
+    <string name="auth_register_subtitle">Empieza tu recorrido con IRIS</string>
+    <string name="auth_name">Nombre</string>
+    <string name="auth_register">Registrarme</string>
+    <string name="auth_have_account">Ya tengo cuenta</string>
+    <string name="auth_fill_credentials">Introduce correo y contraseña.</string>
+    <string name="auth_register_fill_all">Completa nombre y correo.</string>
+    <string name="auth_password_requirements_error">La contraseña debe tener al menos 8 caracteres e incluir letras y números.</string>
+    <string name="auth_select_language">Idioma</string>
+    <string name="auth_password_strength_label">Seguridad de la contraseña</string>
+    <string name="auth_password_weak">Débil</string>
+    <string name="auth_password_fair">Aceptable</string>
+    <string name="auth_password_good">Buena</string>
+    <string name="auth_password_strong">Fuerte</string>
+    <string name="auth_password_requirements">Mínimo 8 caracteres, con letras y números. Añade mayúsculas y símbolos para mayor seguridad.</string>
+    <string name="auth_invalid_email">Introduce un correo electrónico válido.</string>
+    <string name="auth_google_sign_in">Usar Google</string>
+    <string name="auth_google_token_error">No se obtuvo el token de Google. Vuelve a intentarlo.</string>
+    <string name="auth_verify_email_title">Verificación de correo</string>
+    <string name="auth_verify_email_subtitle">Introduce el código de 6 dígitos que te hemos enviado a:</string>
+    <string name="auth_verify_email_subtitle_login">Introduce el código de 6 dígitos que te hemos enviado a tu correo para completar el inicio de sesión:</string>
+    <string name="auth_verify_session_expired">La sesión de verificación ha caducado. Vuelve a iniciar sesión o registrarte.</string>
+    <string name="auth_password_show">Mostrar contraseña</string>
+    <string name="auth_password_hide">Ocultar contraseña</string>
+    <string name="auth_error_generic">No se pudo completar la acción. Inténtalo de nuevo.</string>
+    <string name="auth_error_google_generic">No se pudo iniciar sesión con Google. Inténtalo más tarde.</string>
+    <string name="auth_error_credentials">Correo o contraseña incorrectos.</string>
+    <string name="auth_error_email_in_use">Ese correo ya está en uso.</string>
+    <string name="auth_error_network">Sin conexión. Comprueba tu red e inténtalo de nuevo.</string>
+    <string name="auth_error_service_unavailable">El servicio no está disponible en este momento.</string>
+    <string name="auth_verification_code_label">Código de verificación</string>
+    <string name="auth_verification_code_hint">Introduzca el código de verificación enviado a su correo.</string>
+    <string name="auth_verification_code_invalid">Introduce un código de 6 dígitos.</string>
+    <string name="auth_verify_and_login">Verificar e iniciar sesión</string>
+    <string name="auth_verify_and_register">Verificar y crear cuenta</string>
+    <string name="auth_verify_email_complete">Confirmar código y entrar</string>
+    <string name="auth_register_code_send_failed_hint">Tu cuenta ya está creada. Si no recibes el código, pulsa «Reenviar código» y revisa la carpeta de spam.</string>
+    <string name="auth_resend_code">Reenviar código</string>
+    <string name="auth_back_to_credentials">Cambiar correo o contraseña</string>
+
+    <!-- Navegación inferior -->
+    <string name="nav_home">Inicio</string>
+    <string name="nav_chat_ia">Chat IA</string>
+    <string name="nav_dojo">Dojo</string>
+    <string name="nav_profile">Perfil</string>
+
+    <!-- Profile -->
+    <string name="profile_setup_title">Configura tu perfil</string>
+    <string name="profile_no_rank">Sin rango</string>
+    <string name="profile_change_avatar_hint">Pulsa la foto para cambiar avatar</string>
+    <string name="profile_save">Guardar perfil</string>
+    <string name="profile_save_success">Perfil actualizado correctamente.</string>
+    <string name="profile_save_error">Completa nombre y correo para guardar perfil.</string>
+    <string name="profile_cooldown_name_title">Nombre en periodo de bloqueo</string>
+    <string name="profile_cooldown_name_body">No puedes cambiar el nombre de perfil hasta que pasen 14 días desde el último cambio. Días aproximados restantes: %1$d.</string>
+    <string name="profile_cooldown_email_title">Correo en periodo de bloqueo</string>
+    <string name="profile_cooldown_email_body">No puedes cambiar el correo hasta que pasen 14 días desde el último cambio. Días aproximados restantes: %1$d.</string>
+    <string name="profile_dialog_accept">Entendido</string>
+    <string name="profile_protocol_active">PROTOCOLO ACTIVO</string>
+    <string name="profile_training_progress">PROGRESO DE ENTRENAMIENTO</string>
+    <string name="profile_total_xp">XP TOTALES</string>
+    <string name="profile_streak">RACHA</string>
+    <string name="profile_consistency">CONSISTENCIA</string>
+    <string name="profile_progress_to_level">Progreso al nivel %1$d</string>
+    <string name="profile_security_settings">AJUSTES DE SEGURIDAD</string>
+    <string name="profile_system_preferences">PREFERENCIAS DEL SISTEMA</string>
+    <string name="profile_dark_mode">Modo oscuro</string>
+    <string name="profile_notifications_general">Notificaciones generales</string>
+    <string name="profile_daily_reminder">Recordatorio diario</string>
+    <string name="profile_dojo_progress_notifications">Avisos de progreso Dojo</string>
+    <string name="profile_back">Volver</string>
+    <string name="profile_language">Idioma</string>
+    <string name="profile_spanish">Español</string>
+    <string name="profile_english">Inglés</string>
+    <string name="profile_logout">Cerrar sesión</string>
+    <string name="profile_guest_account">Cuenta de invitado</string>
+    <string name="gate_chat_required">Para usar el chat, inicia sesión o crea una cuenta.</string>
+    <string name="gate_dojo_required">Para acceder al Dojo, inicia sesión o crea una cuenta.</string>
+    <string name="home_sign_in">Iniciar sesión</string>
+    <string name="home_create_account_short">Registrarse</string>
+    <string name="notification_mood_saved_title">Estado de ánimo guardado</string>
+    <string name="notification_mood_saved_body">Gracias por compartir cómo te sientes. Sigue cuidándote.</string>
+    <string name="notification_profile_saved_title">Perfil actualizado</string>
+    <string name="notification_profile_saved_body">Tus datos se han guardado correctamente.</string>
+    <string name="notification_welcome_title">Bienvenida a IRIS</string>
+    <string name="notification_welcome_body">Hola, %1$s. Ya puedes usar todas las funciones.</string>
+    <string name="notification_dojo_reminder_title">Sincronización del Dojo</string>
+    <string name="notification_dojo_reminder_body">No pudimos actualizar desde el servidor. Abre la app cuando tengas conexión.</string>
+
+    <!-- Home -->
+    <string name="home_brand">IRIS</string>
+    <string name="home_profile_cd">Perfil</string>
+    <string name="home_exit_cd">Salir</string>
+    <string name="home_welcome_back">BIENVENIDA DE NUEVO</string>
+    <string name="home_hello_user">Hola, %1$s</string>
+    <string name="home_default_user">Agente</string>
+    <string name="home_guest_name">Invitado</string>
+    <string name="home_level_rank">NIVEL %1$d - %2$s</string>
+    <string name="home_default_rank">Operative</string>
+    <string name="home_total_xp_accumulated">%1$d XP acumulada</string>
+    <string name="home_daily_progress">PROGRESO DIARIO</string>
+    <string name="home_progress_completed">%1$d%% completado</string>
+    <string name="home_calm_minutes">MINUTOS DE CALMA</string>
+    <string name="home_streak_days">DÍAS EN RACHA</string>
+    <string name="home_tools">HERRAMIENTAS</string>
+    <string name="home_partner_simulator">Simulador de Pareja</string>
+    <string name="home_partner_simulator_desc">Practica conversaciones y reconoce señales de alerta.</string>
+    <string name="home_dojo_title">Dojo de Defensa</string>
+    <string name="home_dojo_desc">Fortalece tus límites psicológicos y emocionales.</string>
+    <string name="home_daily_tip_title">Un momento para ti</string>
+    <string name="home_daily_tip_body">Respira hondo, hidrátate y recuerda: pedir ayuda es valentía. IRIS está contigo en cada paso.</string>
+    <string name="home_emergency_cd">Emergencia</string>
+    <string name="home_how_feel_today">¿Cómo te sientes hoy?</string>
+    <string name="home_mood_calm">Calma</string>
+    <string name="home_mood_safe">Segura</string>
+    <string name="home_mood_doubt">Duda</string>
+    <string name="home_mood_alert">Alerta</string>
+
+    <!-- Dojo -->
+    <string name="dojo_safe_space">TU ESPACIO SEGURO</string>
+    <string name="dojo_title_multiline">Dojo de\nDefensa</string>
+    <string name="dojo_subtitle">Fortalece tu resiliencia emocional y física con módulos diseñados por expertas en seguridad femenina.</string>
+    <string name="dojo_total_progress">PROGRESO TOTAL</string>
+    <string name="dojo_next_milestone">PRÓXIMO HITO</string>
+    <string name="dojo_lessons_remaining">Faltan %1$d lecciones para completar el nivel intermedio.</string>
+    <string name="dojo_continue">Continuar</string>
+    <string name="dojo_levels_route">Ruta de niveles</string>
+    <string name="dojo_view_map">VER MAPA</string>
+    <string name="dojo_quote">\"La defensa no comienza en el puño, sino en la convicción de que tu integridad es innegociable.\"</string>
+    <string name="dojo_status_completed">COMPLETADO</string>
+    <string name="dojo_status_in_progress">EN CURSO</string>
+    <string name="dojo_status_locked">BLOQUEADO</string>
+
+    <!-- Chat -->
+    <string name="chat_virtual_partner">PAREJA VIRTUAL</string>
+    <string name="chat_ai_typing">IRIS está escribiendo...</string>
+    <string name="chat_input_hint">Escribe tu mensaje...</string>
+    <string name="chat_empty_title">Aún no hay mensajes</string>
+    <string name="chat_empty_subtitle">Empieza una conversación con IRIS o con la pareja virtual.</string>
+    <string name="chat_loading_history">Cargando conversación…</string>
+    <string name="chat_error_generic">No se pudo enviar el mensaje. Inténtalo de nuevo.</string>
+    <string name="chat_error_network">No se puede conectar al servidor (%1$s). Comprueba que el móvil y el PC están en la misma Wi‑Fi, que el backend está encendido y que la IP en gradle.properties es la del PC.</string>
+    <string name="chat_safety_banner_title">Aviso de seguridad</string>
+    <string name="chat_safety_banner_alert_only">El asistente ha marcado esta respuesta. Si estás en riesgo, contacta con el 016 o el 112.</string>
+    <string name="chat_safety_banner_flagged_hint">Esta respuesta ha sido señalada por el sistema de seguridad.</string>
+    <string name="chat_safety_banner_content_description">Aviso de seguridad del asistente</string>
+    <string name="chat_safety_banner_dismiss">Cerrar</string>
+
+    <string name="home_loading">Cargando tu espacio…</string>
+    <string name="home_empty_profile_title">Sin perfil activo</string>
+    <string name="home_empty_profile_subtitle">Inicia sesión o completa tu perfil para ver tu progreso aquí.</string>
+
+    <string name="dojo_sync_offline_banner">No se pudo actualizar desde el servidor. Mostrando módulos guardados o por defecto.</string>
+    <string name="dojo_loading_modules">Cargando Dojo…</string>
+    <string name="dojo_empty_modules">No hay módulos disponibles.</string>
+
+    <string name="emergency_share_with_maps_link">Necesito ayuda urgente. Mi ubicación actual: https://maps.google.com/?q=%1$.6f,%2$.6f</string>
+    <string name="emergency_share_no_permission_body">Necesito ayuda urgente. No puedo compartir mi ubicación GPS (sin permiso). Si estás conmigo, llama al 016 o al 112.</string>
+    <string name="emergency_share_no_gps_body">Necesito ayuda urgente. La ubicación no está disponible ahora. Llama al 016 o al 112.</string>
+    <string name="emergency_share_rationale">La ubicación solo se usa al pulsar compartir, para incluir un enlace real al mapa. Puedes usar el 016 o el 112 sin compartir ubicación.</string>
+    <string name="emergency_share_permanent_denial">Compartir GPS está desactivado en ajustes. Usa las tarjetas 016/112 o activa la ubicación para IRIS en los ajustes del sistema.</string>
+    <string name="emergency_share_chooser_title">Compartir</string>
+    <string name="emergency_share_button">COMPARTIR UBICACIÓN</string>
+    <string name="emergency_share_button_grant">PERMITIR UBICACIÓN Y COMPARTIR</string>
+</resources>
