@@ -32,6 +32,21 @@ jobs:
           fi
           printf '%s' "$GOOGLE_SERVICES_JSON" > app/google-services.json
 
+      # Clave de firma fija (secretos KEYSTORE_BASE64 y KEYSTORE_PASSWORD). Sin ella, cada
+      # compilación usa una clave distinta y el inicio de sesión con Google no funciona.
+      - name: Restaurar clave de firma
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEYSTORE_PASSWORD" ]; then
+            printf '%s' "$KEYSTORE_BASE64" | base64 -d > iris-release.p12
+            printf 'storeFile=iris-release.p12\nstorePassword=%s\nkeyAlias=iris\nkeyPassword=%s\n' "$KEYSTORE_PASSWORD" "$KEYSTORE_PASSWORD" > keystore.properties
+            echo "Clave de firma fija configurada."
+          else
+            echo "::warning::Sin clave de firma fija: el inicio de sesión con Google no funcionará en este APK."
+          fi
+
       - name: Tests unitarios
         run: ./gradlew :app:testDevDebugUnitTest --stacktrace
 

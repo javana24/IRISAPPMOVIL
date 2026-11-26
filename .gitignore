@@ -31,3 +31,4 @@ app/google-services.json
 
 # Firebase / node
 node_modules/
+*.p12

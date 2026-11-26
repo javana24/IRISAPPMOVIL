@@ -86,6 +86,11 @@ android {
     buildTypes {
         debug {
             resValue("bool", "iris_debug", "true")
+            // Con la clave fija, el APK de pruebas tiene siempre la misma huella SHA-1 y el
+            // inicio de sesión con Google funciona (la huella está registrada en Firebase).
+            if (keystoreProperties != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         release {
             isMinifyEnabled = false
