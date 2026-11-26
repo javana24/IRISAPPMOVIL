@@ -77,4 +77,41 @@ class ChatSafetyContractTest {
         assertEquals("iris", "iris".toApiSimulatorMode())
     }
 
+    @Test
+    fun chatResponseDto_deserializesRedFlagsAndRiskLevel() {
+        val json = """
+            {
+              "response": "¿Con quién estabas? Mándame la ubicación.",
+              "redFlags": [{"tactic": "vigilancia", "label": "Vigilancia del móvil o ubicación", "explanation": "Alex te pide la ubicación para vigilarte."}],
+              "riskLevel": "none",
+              "provider": "groq"
+            }
+        """.trimIndent()
+        val dto = gson.fromJson(json, ChatResponseDto::class.java)
+        assertEquals(1, dto.redFlags?.size)
+        assertEquals("vigilancia", dto.redFlags!!.first().tactic)
+        assertEquals("none", dto.riskLevel)
+        assertNull(dto.safetyAlert)
+    }
+
+    @Test
+    fun analysisReportDto_toleratesMissingLists() {
+        val dto = gson.fromJson("""{"score": 72, "summary": "Buen trabajo"}""", AnalysisReportDto::class.java)
+        assertEquals(72, dto.score)
+        assertTrue(dto.strengths.orEmpty().isEmpty())
+        assertTrue(dto.betterResponses.orEmpty().isEmpty())
+    }
+
+    @Test
+    fun chatRequestDto_serializesDifficulty() {
+        val json = gson.toJson(
+            ChatRequestDto(
+                messages = listOf(MessageDto("user", "Hola")),
+                simulatorMode = "partner",
+                difficulty = PartnerDifficulty.INTENSA.apiValue
+            )
+        )
+        assertTrue(json.contains("\"difficulty\":\"intensa\""))
+    }
+
 }

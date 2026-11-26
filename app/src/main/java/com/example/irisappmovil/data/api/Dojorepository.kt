@@ -5,6 +5,7 @@ import com.example.irisappmovil.data.firebase.FirestoreUserSyncRepository
 import com.example.irisappmovil.data.local.dojo.DojoModuleDao
 import com.example.irisappmovil.data.local.dojo.DojoModuleDefaults
 import com.example.irisappmovil.data.local.dojo.DojoModuleEntity
+import com.example.irisappmovil.data.local.dojo.DojoQuestionBank
 import com.example.irisappmovil.data.local.dojo.DojoModuleStatus
 import com.example.irisappmovil.data.local.dojo.isLocked
 import com.example.irisappmovil.data.local.usuarios.UserDao
@@ -26,43 +27,17 @@ class DojoRepository @Inject constructor(
 ) {
     fun getAllModules(): Flow<List<DojoModuleEntity>> = dojoModuleDao.getAllModules()
 
-    /** @return true si el backend respondió y se actualizó la lista; false si se usaron datos locales / por defecto. */
+    /**
+     * Los módulos del Dojo son locales (el backend no tiene endpoints de Dojo).
+     * @return true cuando los módulos están disponibles.
+     */
     suspend fun refreshModules(): Boolean {
         return try {
-            val response = fetchDojoModulesWithFallback()
-            if (response != null && response.isSuccessful && response.body()?.success == true) {
-                val existingMap = dojoModuleDao.getAllModulesOnce().associateBy { it.id }
-                val modules = response.body()!!.data!!.map { dto ->
-                    val existing = existingMap[dto.id]
-                    DojoModuleEntity(
-                        id = dto.id,
-                        title = dto.title,
-                        description = dto.description,
-                        iconType = dto.iconType,
-                        status = existing?.status ?: dto.status,
-                        completedAt = existing?.completedAt,
-                        order = dto.order,
-                        xpReward = dto.xpReward
-                    )
-                }
-                dojoModuleDao.insertModules(modules)
-                true
-            } else {
-                ensureDefaultModules()
-                false
-            }
-        } catch (e: Exception) {
             ensureDefaultModules()
+            true
+        } catch (e: Exception) {
             false
         }
-    }
-
-    private suspend fun fetchDojoModulesWithFallback(): Response<ApiResponse<List<DojoModuleDto>>>? {
-        val primary = apiService.getDojoModules()
-        if (primary.isSuccessful && primary.body()?.success == true) return primary
-        val secondary = apiService.getDojoModulesUnderApi()
-        if (secondary.isSuccessful && secondary.body()?.success == true) return secondary
-        return primary
     }
 
     suspend fun ensureDefaultModules() {
@@ -74,14 +49,18 @@ class DojoRepository @Inject constructor(
 
     suspend fun completeModule(moduleId: String, score: Int): Result<Int> {
         return try {
-            if (score < 70) {
+            if (score < DojoQuestionBank.PASS_SCORE) {
                 return Result.failure(IllegalStateException("Puntuación insuficiente para completar el módulo"))
             }
             val module = dojoModuleDao.getModuleById(moduleId)
                 ?: return Result.failure(IllegalStateException("Módulo no encontrado"))
-            dojoModuleDao.updateModuleStatus(moduleId, DojoModuleStatus.COMPLETED.raw, System.currentTimeMillis())
+            val alreadyCompleted = module.status == DojoModuleStatus.COMPLETED.raw
+            if (!alreadyCompleted) {
+                dojoModuleDao.updateModuleStatus(moduleId, DojoModuleStatus.COMPLETED.raw, System.currentTimeMillis())
+            }
             unlockNextModule(moduleId)
-            val xpGained = grantExperience(module, score)
+            // Repetir un módulo ya completado sirve para practicar, pero no vuelve a dar XP.
+            val xpGained = if (alreadyCompleted) 0 else grantExperience(module, score)
             firebaseAuth.currentUser?.uid?.let { uid ->
                 userDao.getCurrentUser().first()?.let { u ->
                     firestoreSync.pushUsuario(uid, u)

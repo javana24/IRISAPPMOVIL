@@ -255,11 +255,14 @@ private fun LessonOptionItem(
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 15.sp
             )
-            Text(
-                option.description,
-                color = colors.onSurfaceDim,
-                style = IrisTheme.typography.bodySmall
-            )
+            // La explicación solo se muestra tras responder (si no, revelaría la respuesta correcta).
+            if (isRevealed && (isSelected || option.isCorrect)) {
+                Text(
+                    option.description,
+                    color = colors.onSurfaceDim,
+                    style = IrisTheme.typography.bodySmall
+                )
+            }
         }
     }
 }

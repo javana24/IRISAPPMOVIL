@@ -29,6 +29,12 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.SmartToy
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import com.example.irisappmovil.data.api.AnalysisReportDto
+import com.example.irisappmovil.data.api.PartnerDifficulty
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -143,7 +149,17 @@ fun ChatScreen(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(28.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        if (uiState.isPartner) {
+            DifficultySelector(
+                selected = uiState.difficulty,
+                onSelect = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    viewModel.setDifficulty(it)
+                }
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+        }
         AnimatedVisibility(
             visible = reveal,
             enter = fadeIn(animationSpec = tween(250)) + slideInVertically(animationSpec = tween(250), initialOffsetY = { it / 8 }),
@@ -271,6 +287,7 @@ fun ChatScreen(
                 } else {
                     items(uiState.messages) { msg ->
                         val isAssistant = msg.role == "assistant"
+                        Column(modifier = Modifier.fillMaxWidth()) {
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -333,6 +350,11 @@ fun ChatScreen(
                                 )
                             }
                         }
+                        // Banderas rojas: qué táctica de control acaba de usar la pareja simulada.
+                        uiState.redFlags[msg.id]?.forEach { flag ->
+                            RedFlagChip(label = flag.label, explanation = flag.explanation)
+                        }
+                        }
                     }
                 }
             }
@@ -356,6 +378,33 @@ fun ChatScreen(
                 style = IrisTheme.typography.bodySmall,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+        }
+        if (uiState.isPartner) {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (!uiState.analysisError.isNullOrBlank()) {
+                    Text(
+                        text = uiState.analysisError ?: "",
+                        color = colors.alert,
+                        style = IrisTheme.typography.bodySmall,
+                        modifier = Modifier.weight(1f).padding(end = 8.dp)
+                    )
+                }
+                Text(
+                    text = if (uiState.isAnalyzing) "Analizando..." else "📊 Analizar mi conversación",
+                    color = if (uiState.canAnalyze) colors.primaryLight else colors.onSurfaceDim.copy(alpha = 0.5f),
+                    fontWeight = FontWeight.Bold,
+                    style = IrisTheme.typography.labelMedium,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(20.dp))
+                        .border(1.dp, colors.primary.copy(alpha = if (uiState.canAnalyze) 0.6f else 0.2f), RoundedCornerShape(20.dp))
+                        .clickable(enabled = uiState.canAnalyze) { viewModel.analyzeConversation() }
+                        .padding(horizontal = 14.dp, vertical = 8.dp)
+                )
+            }
         }
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -383,8 +432,8 @@ fun ChatScreen(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
-                    .background(colors.primary)
-                    .clickable {
+                    .background(if (uiState.isSending) colors.primary.copy(alpha = 0.4f) else colors.primary)
+                    .clickable(enabled = !uiState.isSending) {
                         if (input.isNotBlank()) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             viewModel.sendMessage(input)
@@ -402,6 +451,17 @@ fun ChatScreen(
             }
         }
     }
+        uiState.analysis?.let { report ->
+            AnalysisReportDialog(
+                report = report,
+                difficulty = uiState.difficulty,
+                onDismiss = { viewModel.dismissAnalysis() },
+                onRestart = {
+                    viewModel.dismissAnalysis()
+                    viewModel.clearConversation()
+                }
+            )
+        }
         if (!uiState.isAuthenticated) {
             AuthRequiredOverlay(
                 message = stringResource(R.string.gate_chat_required),
@@ -409,6 +469,106 @@ fun ChatScreen(
                 onGoToRegister = onNavigateToRegister
             )
         }
+    }
+}
+
+@Composable
+private fun DifficultySelector(selected: PartnerDifficulty, onSelect: (PartnerDifficulty) -> Unit) {
+    val colors = IrisTheme.colors
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text("DIFICULTAD", color = colors.onSurfaceDim, style = IrisTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            Row {
+                PartnerDifficulty.entries.forEach { level ->
+                    Spacer(Modifier.width(6.dp))
+                    TabChip(level.label, selected == level) { onSelect(level) }
+                }
+            }
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(selected.description, color = colors.onSurfaceDim, style = IrisTheme.typography.bodySmall)
+    }
+}
+
+@Composable
+private fun RedFlagChip(label: String, explanation: String) {
+    val colors = IrisTheme.colors
+    Text(
+        text = "🚩 $label: $explanation",
+        color = colors.onSurface,
+        style = IrisTheme.typography.bodySmall,
+        modifier = Modifier
+            .padding(start = 40.dp, top = 4.dp)
+            .fillMaxWidth(0.85f)
+            .clip(RoundedCornerShape(12.dp))
+            .background(colors.alert.copy(alpha = 0.12f))
+            .border(1.dp, colors.alert.copy(alpha = 0.35f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 8.dp)
+    )
+}
+
+@Composable
+private fun AnalysisReportDialog(
+    report: AnalysisReportDto,
+    difficulty: PartnerDifficulty,
+    onDismiss: () -> Unit,
+    onRestart: () -> Unit
+) {
+    val colors = IrisTheme.colors
+    val scoreColor = when {
+        report.score >= 75 -> colors.success
+        report.score >= 45 -> Color(0xFFFFB830)
+        else -> colors.alert
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = colors.card,
+        title = { Text("Informe de tu entrenamiento", color = colors.onSurface, fontWeight = FontWeight.Black) },
+        text = {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("${report.score}", color = scoreColor, fontSize = 44.sp, fontWeight = FontWeight.Black)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Puntuación · ${difficulty.label}", color = colors.onSurfaceDim, style = IrisTheme.typography.labelMedium)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(report.summary, color = colors.onSurface, style = IrisTheme.typography.bodyMedium)
+                ReportSection("Lo que has hecho bien", colors.success, report.strengths.orEmpty().map { "• $it" })
+                ReportSection("Qué puedes mejorar", Color(0xFFFFB830), report.improvements.orEmpty().map { "• $it" })
+                ReportSection(
+                    "Tácticas de control que ha usado Alex",
+                    colors.alert,
+                    report.tacticsDetected.orEmpty().map { t -> "🚩 ${t.label}" + (t.example?.takeIf { it.isNotBlank() }?.let { ": «$it»" } ?: "") }
+                )
+                ReportSection(
+                    "Respuestas alternativas",
+                    colors.primaryLight,
+                    report.betterResponses.orEmpty().map { "Alex: «${it.partnerMessage}»\n💬 ${it.suggestion}" }
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onRestart) { Text("Empezar de nuevo", color = colors.primaryLight, fontWeight = FontWeight.Bold) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Seguir conversando", color = colors.onSurfaceDim) }
+        }
+    )
+}
+
+@Composable
+private fun ReportSection(title: String, titleColor: Color, lines: List<String>) {
+    if (lines.isEmpty()) return
+    val colors = IrisTheme.colors
+    Spacer(Modifier.height(14.dp))
+    Text(title, color = titleColor, fontWeight = FontWeight.Bold, style = IrisTheme.typography.labelLarge)
+    Spacer(Modifier.height(4.dp))
+    lines.forEach { line ->
+        Text(line, color = colors.onSurface, style = IrisTheme.typography.bodySmall, modifier = Modifier.padding(vertical = 2.dp))
     }
 }
 

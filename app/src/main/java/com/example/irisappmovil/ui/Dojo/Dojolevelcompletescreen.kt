@@ -67,9 +67,13 @@ fun DojoLevelCompleteScreen(
                 .background(colors.card)
                 .padding(16.dp)
         ) {
-            Text(text = "+$xpGained XP GANADA", color = Color.White, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = "7 Días de racha", color = colors.onSurfaceDim)
+            if (xpGained > 0) {
+                Text(text = "+$xpGained XP GANADA", color = Color.White, fontWeight = FontWeight.Bold)
+            } else {
+                Text(text = "Módulo repasado", color = Color.White, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "Ya lo habías completado: repasar no suma XP, pero refuerza lo aprendido.", color = colors.onSurfaceDim)
+            }
         }
         Spacer(modifier = Modifier.height(28.dp))
         PrimaryButton(text = "CONTINUAR", onClick = onContinue, modifier = Modifier.fillMaxWidth())

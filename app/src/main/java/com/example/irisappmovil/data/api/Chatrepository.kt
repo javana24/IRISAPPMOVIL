@@ -1,22 +1,28 @@
 package com.example.irisappmovil.data.api
 
-
 import com.example.irisappmovil.data.firebase.FirestoreUserSyncRepository
 import com.example.irisappmovil.data.local.chat.ChatMessageDao
 import com.example.irisappmovil.data.local.chat.ChatMessageEntity
-import com.google.gson.Gson
-import kotlinx.coroutines.flow.Flow
-import retrofit2.HttpException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.gson.Gson
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import retrofit2.HttpException
+import retrofit2.Response
 
-/** Resultado de enviar mensaje al backend, incluyendo aviso de seguridad del API (SCRUM-71). */
+/** Resultado de enviar un mensaje al backend. */
 data class ChatSendOutcome(
     val message: ChatMessageEntity,
     val safetyAlert: Boolean,
-    val safetyMessage: String?
+    val safetyMessage: String?,
+    /** Banderas rojas del mensaje de la pareja simulada (vacío en el modo consejero). */
+    val redFlags: List<RedFlagDto> = emptyList()
 )
+
+/** Mensajes de historial que se envían al modelo (el backend usa como mucho los últimos 20). */
+private const val HISTORY_LIMIT = 20
 
 @Singleton
 class ChatRepository @Inject constructor(
@@ -37,67 +43,89 @@ class ChatRepository @Inject constructor(
         conversationId: String,
         content: String,
         mode: String,
-        history: List<ChatMessageEntity>
+        history: List<ChatMessageEntity>,
+        difficulty: PartnerDifficulty = PartnerDifficulty.MODERADA
     ): Result<ChatSendOutcome> {
-        // Save user message
         val userMessage = ChatMessageEntity(
             conversationId = conversationId,
             role = "user",
             content = content,
             chatMode = mode
         )
-        val userRowId = chatMessageDao.insertMessage(userMessage)
-        val uid = firebaseAuth.currentUser?.uid
-        if (uid != null) {
-            firestoreSync.pushMensajeIa(uid, userMessage.copy(id = userRowId))
-        }
+        val savedUserMessage = userMessage.copy(id = chatMessageDao.insertMessage(userMessage))
 
-        return try {
-            val messages = history.takeLast(10).map { MessageDto(it.role, it.content) } +
-                listOf(MessageDto("user", content))
+        val result = try {
+            val messages = history.takeLast(HISTORY_LIMIT).map { MessageDto(it.role, it.content) } +
+                MessageDto("user", content)
 
             val response = apiService.sendMessage(
                 ChatRequestDto(
                     messages = messages,
-                    simulatorMode = mode.toApiSimulatorMode()
+                    language = currentApiLanguage(),
+                    simulatorMode = mode.toApiSimulatorMode(),
+                    difficulty = difficulty.apiValue
                 )
             )
 
-            if (response.isSuccessful && response.body() != null) {
-                val body = response.body()!!
-                val assistantContent = body.response
+            val body = response.body()
+            if (response.isSuccessful && body != null) {
                 val assistantMessage = ChatMessageEntity(
                     conversationId = conversationId,
                     role = "assistant",
-                    content = assistantContent,
+                    content = body.response,
                     chatMode = mode
                 )
-                val asstRowId = chatMessageDao.insertMessage(assistantMessage)
-                if (uid != null) {
-                    firestoreSync.pushMensajeIa(uid, assistantMessage.copy(id = asstRowId))
+                val savedAssistant = assistantMessage.copy(id = chatMessageDao.insertMessage(assistantMessage))
+                firebaseAuth.currentUser?.uid?.let { uid ->
+                    firestoreSync.pushMensajeIa(uid, savedUserMessage)
+                    firestoreSync.pushMensajeIa(uid, savedAssistant)
                 }
 
                 val notice = body.toSafetyNotice()
                 Result.success(
                     ChatSendOutcome(
-                        message = assistantMessage,
+                        message = savedAssistant,
                         safetyAlert = notice?.alertFlagged == true,
-                        safetyMessage = notice?.customMessage
+                        safetyMessage = notice?.customMessage,
+                        redFlags = body.redFlags.orEmpty()
                     )
                 )
             } else {
-                val rawError = response.errorBody()?.string()
-                val parsedError = rawError
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { runCatching { gson.fromJson(it, ApiError::class.java) }.getOrNull() }
-                val message = parsedError?.error ?: "El servicio de chat no respondió correctamente."
-                Result.failure(IllegalStateException("HTTP ${response.code()}: $message"))
+                Result.failure(IllegalStateException(errorMessageFrom(response)))
             }
         } catch (e: HttpException) {
             Result.failure(IllegalStateException("Error HTTP ${e.code()} en chat.", e))
         } catch (e: Exception) {
             Result.failure(e)
         }
+
+        // Si el envío falla, quitamos el mensaje para no dejar turnos huérfanos en el historial.
+        if (result.isFailure) {
+            chatMessageDao.deleteMessage(savedUserMessage)
+        }
+        return result
+    }
+
+    /** Pide al backend el informe de cómo ha respondido la persona en el simulador. */
+    suspend fun analyzeConversation(
+        history: List<ChatMessageEntity>,
+        difficulty: PartnerDifficulty
+    ): Result<AnalysisReportDto> = try {
+        val response = apiService.analyzeConversation(
+            AnalyzeRequestDto(
+                messages = history.map { MessageDto(it.role, it.content) },
+                language = currentApiLanguage(),
+                difficulty = difficulty.apiValue
+            )
+        )
+        val body = response.body()
+        if (response.isSuccessful && body != null) {
+            Result.success(body)
+        } else {
+            Result.failure(IllegalStateException(errorMessageFrom(response)))
+        }
+    } catch (e: Exception) {
+        Result.failure(e)
     }
 
     suspend fun clearConversation(conversationId: String) {
@@ -107,12 +135,25 @@ class ChatRepository @Inject constructor(
     suspend fun clearConversationByMode(conversationId: String, mode: String) {
         chatMessageDao.clearConversationByMode(conversationId, mode)
     }
+
+    private fun errorMessageFrom(response: Response<*>): String {
+        if (response.code() == 503) {
+            return "La IA no está disponible en este momento. Vuelve a intentarlo en unos minutos."
+        }
+        val parsed = response.errorBody()?.string()
+            ?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { gson.fromJson(it, ApiError::class.java) }.getOrNull() }
+        return "HTTP ${response.code()}: ${parsed?.error ?: "El servicio de chat no respondió correctamente."}"
+    }
 }
 
+internal fun currentApiLanguage(): String =
+    if (Locale.getDefault().language.startsWith("en")) "en" else "es"
+
 /**
- * Mapeo UI Android → `simulatorMode` del backend (`POST /api/chat`, SCRUM-65/66/71):
- * - [ChatUiState] / pestaña Partner: `VIRTUAL_PARTNER` → `"partner"`
- * - pestaña IRIS: cualquier otro valor (p. ej. `IRIS`) → `"iris"`
+ * Mapeo UI Android → `simulatorMode` del backend (`POST /api/chat`):
+ * - pestaña Pareja: `VIRTUAL_PARTNER` → `"partner"`
+ * - pestaña IRIS: cualquier otro valor → `"iris"`
  */
 internal fun String.toApiSimulatorMode(): String = when (uppercase()) {
     "VIRTUAL_PARTNER" -> "partner"

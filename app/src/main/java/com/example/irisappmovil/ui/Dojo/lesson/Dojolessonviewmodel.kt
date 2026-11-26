@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.irisappmovil.data.api.DojoRepository
+import com.example.irisappmovil.data.local.dojo.DojoQuestionBank
 import com.example.irisappmovil.di.notificacion.NotificationOrchestrator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -98,7 +99,7 @@ class DojoLessonViewModel @Inject constructor(
         }
 
         val score = calculateScore()
-        val passed = score >= 70
+        val passed = score >= DojoQuestionBank.PASS_SCORE
         if (!passed) {
             _uiState.update { it.copy(hasFailedCompletion = true) }
             onFinished(score, false, 0)
@@ -113,8 +114,10 @@ class DojoLessonViewModel @Inject constructor(
     }
 
     fun retryLesson() {
+        // Cada reintento usa preguntas nuevas al azar.
         _uiState.update {
             it.copy(
+                questions = buildQuestionsForModule(moduleId),
                 currentIndex = 0,
                 selectedOptionId = null,
                 isAnswerRevealed = false,
@@ -132,43 +135,28 @@ class DojoLessonViewModel @Inject constructor(
 
     private fun buildQuestionsForModule(moduleId: String): List<LessonQuestion> {
         val moduleNumber = moduleId.filter { it.isDigit() }.toIntOrNull() ?: 1
-        return listOf(
+        val moduleTitle = MODULE_TITLES[moduleId] ?: MODULE_TITLES.getValue("mod_01")
+        val picked = DojoQuestionBank.pickForModule(moduleId)
+        return picked.mapIndexed { index, question ->
             LessonQuestion(
-                question = "Tu pareja revisa constantemente tus mensajes y cuestiona tu memoria sobre eventos pasados. ¿Qué comportamiento es este?",
+                question = question.text,
                 moduleNumber = moduleNumber,
-                moduleTitle = "MANIPULACIÓN PSICOLÓGICA",
-                options = listOf(
-                    LessonOption("A", "A", "Protección excesiva", "Interés genuino por tu seguridad digital.", false),
-                    LessonOption("B", "B", "Gaslighting y control", "Manipulación para invalidar tu percepción y autonomía.", true),
-                    LessonOption("C", "C", "Inseguridad temporal", "Falta de confianza puntual basada en el pasado.", false),
-                    LessonOption("D", "D", "Transparencia radical", "Acuerdo mutuo de honestidad sin límites.", false),
-                ),
-                progressPercent = 33
-            ),
-            LessonQuestion(
-                question = "Si alguien insiste en decidir por ti con la excusa de cuidarte, ¿qué señal prioritaria debes identificar?",
-                moduleNumber = moduleNumber,
-                moduleTitle = "LÍMITES SALUDABLES",
-                options = listOf(
-                    LessonOption("A", "A", "Romanticismo intenso", "Muestra de amor a largo plazo.", false),
-                    LessonOption("B", "B", "Control encubierto", "Sustitución de tu criterio por imposición progresiva.", true),
-                    LessonOption("C", "C", "Comunicación directa", "Diálogo sano para tomar decisiones.", false),
-                    LessonOption("D", "D", "Apoyo logístico", "Ayuda puntual sin presión.", false),
-                ),
-                progressPercent = 66
-            ),
-            LessonQuestion(
-                question = "Ante una discusión, ¿cuál respuesta es más asertiva para proteger tus límites?",
-                moduleNumber = moduleNumber,
-                moduleTitle = "COMUNICACIÓN ASERTIVA",
-                options = listOf(
-                    LessonOption("A", "A", "Ceder para evitar conflicto", "Prioriza la calma inmediata sobre tu seguridad.", false),
-                    LessonOption("B", "B", "Guardar silencio total", "No expresa necesidad ni límite.", false),
-                    LessonOption("C", "C", "Nombrar el límite y la consecuencia", "Comunicación clara, firme y sin agresión.", true),
-                    LessonOption("D", "D", "Responder con ataque", "Escala la situación y te expone más.", false),
-                ),
-                progressPercent = 100
+                moduleTitle = moduleTitle,
+                options = question.options.mapIndexed { optionIndex, option ->
+                    val label = ('A' + optionIndex).toString()
+                    LessonOption(label, label, option.text, option.feedback, option.correct)
+                },
+                progressPercent = ((index + 1) * 100) / picked.size
             )
+        }
+    }
+
+    private companion object {
+        val MODULE_TITLES = mapOf(
+            "mod_01" to "RECONOCIENDO LA MANIPULACIÓN",
+            "mod_02" to "LÍMITES SALUDABLES",
+            "mod_03" to "COMUNICACIÓN ASERTIVA",
+            "mod_04" to "ESPACIO SEGURO"
         )
     }
 }

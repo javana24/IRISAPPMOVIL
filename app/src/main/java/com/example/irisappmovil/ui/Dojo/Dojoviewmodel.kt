@@ -19,8 +19,8 @@ import kotlinx.coroutines.withTimeout
 
 data class DojoUiState(
     val modules: List<DojoModuleEntity> = emptyList(),
-    val totalProgress: Float = 0.64f,
-    val nextMilestone: String = "Maestría en Límites",
+    val totalProgress: Float = 0f,
+    val nextMilestone: String = "",
     val lessonsToComplete: Int = 2,
     val isLoading: Boolean = true,
     val syncFromNetworkFailed: Boolean = false,

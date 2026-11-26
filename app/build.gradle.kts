@@ -42,7 +42,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        resValue("string", "iris_api_base_url", "https://iris-node.vercel.app/")
+        resValue("string", "iris_api_base_url", "https://irisapp-api.vercel.app/")
         resValue("string", "iris_environment", "dev")
         resValue("string", "iris_api_key", "")
     }
@@ -62,21 +62,21 @@ android {
     productFlavors {
         create("dev") {
             dimension = "environment"
-            val url = irisApiBaseUrl("iris.api.baseUrl.dev", "https://iris-node.vercel.app/")
+            val url = irisApiBaseUrl("iris.api.baseUrl.dev", "https://irisapp-api.vercel.app/")
             resValue("string", "iris_api_base_url", url)
             resValue("string", "iris_environment", "dev")
             resValue("string", "iris_api_key", "")
         }
         create("stage") {
             dimension = "environment"
-            val url = irisApiBaseUrl("iris.api.baseUrl.stage", "https://iris-node.vercel.app/")
+            val url = irisApiBaseUrl("iris.api.baseUrl.stage", "https://irisapp-api.vercel.app/")
             resValue("string", "iris_api_base_url", url)
             resValue("string", "iris_environment", "stage")
             resValue("string", "iris_api_key", irisApiKey())
         }
         create("prod") {
             dimension = "environment"
-            val url = irisApiBaseUrl("iris.api.baseUrl.prod", "https://iris-node.vercel.app/")
+            val url = irisApiBaseUrl("iris.api.baseUrl.prod", "https://irisapp-api.vercel.app/")
             resValue("string", "iris_api_base_url", url)
             resValue("string", "iris_environment", "prod")
             resValue("string", "iris_api_key", irisApiKey())
