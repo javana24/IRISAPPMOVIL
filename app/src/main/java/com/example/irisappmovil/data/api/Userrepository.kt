@@ -2,11 +2,16 @@ package com.example.irisappmovil.data.api
 
 import com.example.irisappmovil.data.firebase.FirestoreUserSyncRepository
 import com.example.irisappmovil.data.firebase.GoogleSignInHelper
+import com.example.irisappmovil.data.local.chat.ChatMessageDao
+import com.example.irisappmovil.data.local.dojo.DojoModuleDao
+import com.example.irisappmovil.data.local.dojo.DojoModuleDefaults
+import com.example.irisappmovil.data.local.mood.MoodDao
 import com.example.irisappmovil.data.local.usuarios.UserDao
 import com.example.irisappmovil.data.local.usuarios.UserEntity
 import com.example.irisappmovil.domain.LevelSystem
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.FirebaseAuthRecentLoginRequiredException
 import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.UserProfileChangeRequest
@@ -28,7 +33,10 @@ class UserRepository @Inject constructor(
     private val userDao: UserDao,
     private val firebaseAuth: FirebaseAuth,
     private val firestoreSync: FirestoreUserSyncRepository,
-    private val googleSignInHelper: GoogleSignInHelper
+    private val googleSignInHelper: GoogleSignInHelper,
+    private val chatMessageDao: ChatMessageDao,
+    private val moodDao: MoodDao,
+    private val dojoModuleDao: DojoModuleDao
 ) {
     fun getCurrentUser(): Flow<UserEntity?> = userDao.getCurrentUser()
 
@@ -144,6 +152,33 @@ class UserRepository @Inject constructor(
         runCatching { googleSignInHelper.signOut() }
         firebaseAuth.signOut()
         userDao.deactivateAll()
+    }
+
+    /**
+     * Elimina la cuenta por completo: datos en Firestore, usuario de Firebase Auth y datos
+     * guardados en el móvil (requisito de Google Play para apps que permiten crear cuenta).
+     */
+    suspend fun deleteAccount(): Result<Unit> {
+        val user = firebaseAuth.currentUser
+            ?: return Result.failure(IllegalStateException("No hay ninguna sesión iniciada."))
+        return try {
+            firestoreSync.deleteAllUserData(user.uid)
+            user.delete().await()
+            runCatching { googleSignInHelper.signOut() }
+            firebaseAuth.signOut()
+            chatMessageDao.clearAll()
+            moodDao.clearMoodHistory(user.uid)
+            dojoModuleDao.deleteAllModules()
+            dojoModuleDao.insertModules(DojoModuleDefaults.modulosIniciales())
+            userDao.deleteAllUsers()
+            Result.success(Unit)
+        } catch (e: FirebaseAuthRecentLoginRequiredException) {
+            Result.failure(
+                IllegalStateException("Por seguridad, cierra sesión, vuelve a entrar y repite la eliminación de la cuenta.")
+            )
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun updateRoomUser(entity: UserEntity) {

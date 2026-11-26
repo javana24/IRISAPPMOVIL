@@ -75,6 +75,8 @@ class ChatViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
+            // Primero se borran las conversaciones de sesiones anteriores y después se muestran.
+            chatRepository.clearPreviousSessionsOnce()
             _uiState
                 .map { it.mode to it.conversationId }
                 .distinctUntilChanged()

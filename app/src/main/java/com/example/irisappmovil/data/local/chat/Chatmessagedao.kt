@@ -24,6 +24,9 @@ interface ChatMessageDao {
     @Query("DELETE FROM chat_messages WHERE conversationId = :conversationId AND chatMode = :mode")
     suspend fun clearConversationByMode(conversationId: String, mode: String)
 
+    @Query("DELETE FROM chat_messages")
+    suspend fun clearAll()
+
     @Query("SELECT * FROM chat_messages ORDER BY timestamp DESC LIMIT 50")
     suspend fun getRecentMessages(): List<ChatMessageEntity>
 }

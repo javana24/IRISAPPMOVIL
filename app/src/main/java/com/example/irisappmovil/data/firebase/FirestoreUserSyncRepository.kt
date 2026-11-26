@@ -1,10 +1,8 @@
 package com.example.irisappmovil.data.firebase
 
-import com.example.irisappmovil.data.local.chat.ChatMessageEntity
 import com.example.irisappmovil.data.local.dojo.DojoModuleDao
 import com.example.irisappmovil.data.local.dojo.DojoModuleDefaults
 import com.example.irisappmovil.data.local.dojo.DojoModuleEntity
-import com.example.irisappmovil.data.local.mood.MoodEntryEntity
 import com.example.irisappmovil.data.local.usuarios.UserDao
 import com.example.irisappmovil.data.local.usuarios.UserEntity
 import com.example.irisappmovil.domain.LevelSystem
@@ -86,6 +84,9 @@ class FirestoreUserSyncRepository @Inject constructor(
             dojoModuleDao.deleteAllModules()
             dojoModuleDao.insertModules(DojoModuleDefaults.modulosIniciales())
         }
+
+        // Limpia chats o estados de ánimo subidos por versiones antiguas de la app.
+        runCatching { purgeSensitiveCloudData(uid) }
     }
 
     suspend fun pushUsuario(uid: String, user: UserEntity) {
@@ -138,30 +139,37 @@ class FirestoreUserSyncRepository @Inject constructor(
         ).await()
     }
 
-    suspend fun pushMensajeIa(uid: String, mensaje: ChatMessageEntity) {
+    /**
+     * Privacidad: las conversaciones con la IA y el estado de ánimo ya NO se suben a la nube.
+     * Versiones anteriores de la app sí los guardaban; aquí se borran los que queden.
+     */
+    suspend fun purgeSensitiveCloudData(uid: String) {
         val ref = firestore.collection(FirestoreConstants.COLECCION_USUARIOS).document(uid)
-            .collection(FirestoreConstants.SUBCOLECCION_MENSAJES_IA).document()
-        ref.set(
-            mapOf(
-                FirestoreConstants.CAMPO_ID_MENSAJE_LOCAL to mensaje.id,
-                FirestoreConstants.CAMPO_ID_CONVERSACION to mensaje.conversationId,
-                FirestoreConstants.CAMPO_ROL to mensaje.role,
-                FirestoreConstants.CAMPO_CONTENIDO to mensaje.content,
-                FirestoreConstants.CAMPO_MODO_CHAT to mensaje.chatMode,
-                FirestoreConstants.CAMPO_CREADO_EN to mensaje.timestamp
-            )
-        ).await()
+        listOf(
+            FirestoreConstants.SUBCOLECCION_MENSAJES_IA,
+            FirestoreConstants.SUBCOLECCION_ENTRADAS_ESTADO_ANIMO
+        ).forEach { name -> deleteCollection(ref.collection(name)) }
     }
 
-    suspend fun pushEntradaEstadoAnimo(uid: String, entrada: MoodEntryEntity) {
+    /** Borra todos los datos de la persona en Firestore (al eliminar la cuenta). */
+    suspend fun deleteAllUserData(uid: String) {
         val ref = firestore.collection(FirestoreConstants.COLECCION_USUARIOS).document(uid)
-            .collection(FirestoreConstants.SUBCOLECCION_ENTRADAS_ESTADO_ANIMO).document()
-        ref.set(
-            mapOf(
-                FirestoreConstants.CAMPO_ESTADO_ANIMO to entrada.mood,
-                FirestoreConstants.CAMPO_CREADO_EN to entrada.timestamp
-            )
-        ).await()
+        listOf(
+            FirestoreConstants.SUBCOLECCION_MODULOS_DOJO,
+            FirestoreConstants.SUBCOLECCION_MENSAJES_IA,
+            FirestoreConstants.SUBCOLECCION_ENTRADAS_ESTADO_ANIMO
+        ).forEach { name -> deleteCollection(ref.collection(name)) }
+        ref.delete().await()
+    }
+
+    private suspend fun deleteCollection(collection: com.google.firebase.firestore.CollectionReference) {
+        while (true) {
+            val batchDocs = collection.limit(200).get().await()
+            if (batchDocs.isEmpty) return
+            val batch = firestore.batch()
+            batchDocs.documents.forEach { batch.delete(it.reference) }
+            batch.commit().await()
+        }
     }
 
     private fun usuarioAMap(user: UserEntity): Map<String, Any?> = mapOf(

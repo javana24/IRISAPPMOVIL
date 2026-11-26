@@ -80,12 +80,7 @@ class HomeViewModel @Inject constructor(
                     mood = mood
                 )
             )
-            firebaseAuth.currentUser?.uid?.let { uid ->
-                firestoreSync.pushEntradaEstadoAnimo(
-                    uid,
-                    MoodEntryEntity(userId = userId, mood = mood)
-                )
-            }
+            // El estado de ánimo se queda solo en el móvil (no se sube a la nube por privacidad).
             notificationHelper.showMoodSavedNotification()
         }
     }

@@ -123,6 +123,17 @@ class ProfileViewModel @Inject constructor(
         onFinished()
     }
 
+    /** Elimina la cuenta y todos sus datos. `onError` recibe un mensaje para la persona usuaria. */
+    fun deleteAccount(onDeleted: () -> Unit, onError: (String) -> Unit) = viewModelScope.launch {
+        userRepository.deleteAccount().fold(
+            onSuccess = {
+                preferencesRepository.setAvatarUri(null)
+                onDeleted()
+            },
+            onFailure = { e -> onError(e.message ?: "No se pudo eliminar la cuenta. Inténtalo de nuevo.") }
+        )
+    }
+
     fun updateAvatar(uriString: String?) = viewModelScope.launch {
         if (uriString == null) {
             preferencesRepository.setAvatarUri(null)

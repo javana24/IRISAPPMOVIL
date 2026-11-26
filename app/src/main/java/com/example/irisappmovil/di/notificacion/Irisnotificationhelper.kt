@@ -49,8 +49,10 @@ class IrisNotificationHelper @Inject constructor(
 
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_EMERGENCY)
             .setSmallIcon(R.drawable.ic_iris_logo)
-            .setContentTitle("🚨 Hemos detectado un riesgo")
-            .setContentText("Tu seguridad es nuestra prioridad. Pulsa para ver opciones.")
+            // Discreta: no aparece en la pantalla de bloqueo y el texto no revela de qué trata.
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+            .setContentTitle("IRIS")
+            .setContentText("Tienes un aviso pendiente. Pulsa para abrir.")
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setContentIntent(pendingOpenIntent)
@@ -71,6 +73,7 @@ class IrisNotificationHelper @Inject constructor(
 
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_DAILY_REMINDER)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle("¡Tu momento de calma te espera!")
             .setContentText("Dedica 5 minutos a tu bienestar hoy.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -84,6 +87,7 @@ class IrisNotificationHelper @Inject constructor(
     fun showStreakNotification(streak: Int) {
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_PROGRESS)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle("🔥 ¡$streak días en racha!")
             .setContentText("Sigue así. Cada día cuenta en tu camino.")
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -96,6 +100,7 @@ class IrisNotificationHelper @Inject constructor(
     fun showLevelCompleteNotification(xpGained: Int) {
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_PROGRESS)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle("⚡ ¡Nivel completado!")
             .setContentText("+$xpGained XP ganada. Sigue avanzando en el Dojo.")
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -113,6 +118,7 @@ class IrisNotificationHelper @Inject constructor(
         )
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_CALM_SESSION)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle(context.getString(R.string.notification_mood_saved_title))
             .setContentText(context.getString(R.string.notification_mood_saved_body))
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -132,6 +138,7 @@ class IrisNotificationHelper @Inject constructor(
         )
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_PROGRESS)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle(context.getString(R.string.notification_profile_saved_title))
             .setContentText(context.getString(R.string.notification_profile_saved_body))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -149,6 +156,7 @@ class IrisNotificationHelper @Inject constructor(
         )
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_DAILY_REMINDER)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle(context.getString(R.string.notification_welcome_title))
             .setContentText(context.getString(R.string.notification_welcome_body, userName))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -168,6 +176,7 @@ class IrisNotificationHelper @Inject constructor(
         )
         val notification = NotificationCompat.Builder(context, NotificationChannelManager.CHANNEL_PROGRESS)
             .setSmallIcon(R.drawable.ic_iris_logo)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setContentTitle(context.getString(R.string.notification_dojo_reminder_title))
             .setContentText(context.getString(R.string.notification_dojo_reminder_body))
             .setPriority(NotificationCompat.PRIORITY_LOW)

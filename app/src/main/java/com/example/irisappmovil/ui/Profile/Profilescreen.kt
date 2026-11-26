@@ -70,6 +70,9 @@ fun ProfileScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val profileDialog by viewModel.profileDialog.collectAsStateWithLifecycle()
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
+    var isDeletingAccount by remember { mutableStateOf(false) }
+    var deleteAccountError by remember { mutableStateOf<String?>(null) }
     val colors = IrisTheme.colors
     val totalXp = uiState.user?.totalXp ?: 0
     val level = uiState.user?.level ?: 1
@@ -277,7 +280,57 @@ fun ProfileScreen(
             ) {
                 Text(stringResource(R.string.profile_logout), fontWeight = FontWeight.Bold)
             }
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedButton(
+                onClick = { showDeleteAccountDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("Eliminar mi cuenta", color = colors.alert, fontWeight = FontWeight.Bold)
+            }
+            deleteAccountError?.let { message ->
+                Text(message, color = colors.alert, fontSize = 13.sp, modifier = Modifier.padding(top = 8.dp))
+            }
         }
+    }
+    if (showDeleteAccountDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isDeletingAccount) showDeleteAccountDialog = false },
+            title = { Text("¿Eliminar tu cuenta?") },
+            text = {
+                Text("Se borrarán tu cuenta, tu progreso y todos tus datos, en este móvil y en la nube. No se puede deshacer.")
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = !isDeletingAccount,
+                    onClick = {
+                        isDeletingAccount = true
+                        deleteAccountError = null
+                        viewModel.deleteAccount(
+                            onDeleted = {
+                                isDeletingAccount = false
+                                showDeleteAccountDialog = false
+                                onLoggedOut()
+                            },
+                            onError = { message ->
+                                isDeletingAccount = false
+                                showDeleteAccountDialog = false
+                                deleteAccountError = message
+                            }
+                        )
+                    }
+                ) {
+                    Text(if (isDeletingAccount) "Eliminando..." else "Eliminar", color = colors.alert, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(enabled = !isDeletingAccount, onClick = { showDeleteAccountDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
     }
     when (val d = profileDialog) {
         is ProfileDialogEvent.CooldownNombre -> {

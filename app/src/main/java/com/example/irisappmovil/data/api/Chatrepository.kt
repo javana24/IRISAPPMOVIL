@@ -33,6 +33,20 @@ class ChatRepository @Inject constructor(
 ) {
     private val gson = Gson()
 
+    @Volatile
+    private var historyClearedThisSession = false
+
+    /**
+     * Seguridad de la víctima: las conversaciones no se conservan entre sesiones, para que
+     * nadie que coja el móvil pueda leerlas. Se borran la primera vez que se abre el chat
+     * tras arrancar la app.
+     */
+    suspend fun clearPreviousSessionsOnce() {
+        if (historyClearedThisSession) return
+        chatMessageDao.clearAll()
+        historyClearedThisSession = true
+    }
+
     fun getMessages(conversationId: String): Flow<List<ChatMessageEntity>> =
         chatMessageDao.getMessages(conversationId)
 
@@ -75,11 +89,8 @@ class ChatRepository @Inject constructor(
                     content = body.response,
                     chatMode = mode
                 )
+                // Privacidad: la conversación se queda solo en el móvil y se borra al cerrar la app.
                 val savedAssistant = assistantMessage.copy(id = chatMessageDao.insertMessage(assistantMessage))
-                firebaseAuth.currentUser?.uid?.let { uid ->
-                    firestoreSync.pushMensajeIa(uid, savedUserMessage)
-                    firestoreSync.pushMensajeIa(uid, savedAssistant)
-                }
 
                 val notice = body.toSafetyNotice()
                 Result.success(
