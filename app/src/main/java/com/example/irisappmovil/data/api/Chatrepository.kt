@@ -18,7 +18,9 @@ data class ChatSendOutcome(
     val safetyAlert: Boolean,
     val safetyMessage: String?,
     /** Banderas rojas del mensaje de la pareja simulada (vacío en el modo consejero). */
-    val redFlags: List<RedFlagDto> = emptyList()
+    val redFlags: List<RedFlagDto> = emptyList(),
+    /** "none" | "concern" | "urgent" */
+    val riskLevel: String = "none"
 )
 
 /** Mensajes de historial que se envían al modelo (el backend usa como mucho los últimos 20). */
@@ -98,7 +100,8 @@ class ChatRepository @Inject constructor(
                         message = savedAssistant,
                         safetyAlert = notice?.alertFlagged == true,
                         safetyMessage = notice?.customMessage,
-                        redFlags = body.redFlags.orEmpty()
+                        redFlags = body.redFlags.orEmpty(),
+                        riskLevel = body.riskLevel ?: "none"
                     )
                 )
             } else {

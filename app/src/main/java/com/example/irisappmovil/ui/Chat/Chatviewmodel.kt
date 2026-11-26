@@ -49,7 +49,11 @@ data class ChatUiState(
     val redFlags: Map<Long, List<RedFlagDto>> = emptyMap(),
     val isAnalyzing: Boolean = false,
     val analysis: AnalysisReportDto? = null,
-    val analysisError: String? = null
+    val analysisError: String? = null,
+    /** Aviso suave del consejero ante señales de control (nivel "concern"). */
+    val concernNotice: Boolean = false,
+    /** Ya se mostró el aviso suave en esta conversación (no repetirlo en cada mensaje). */
+    val concernShown: Boolean = false
 ) {
     val isPartner: Boolean get() = mode == MODE_PARTNER
 
@@ -91,12 +95,16 @@ class ChatViewModel @Inject constructor(
 
     fun switchMode(mode: String) {
         _uiState.update {
-            it.copy(mode = mode, errorMessage = null, safetyNotice = null, analysis = null, analysisError = null)
+            it.copy(mode = mode, errorMessage = null, safetyNotice = null, concernNotice = false, analysis = null, analysisError = null)
         }
     }
 
     fun dismissSafetyBanner() {
         _uiState.update { it.copy(safetyNotice = null) }
+    }
+
+    fun dismissConcernNotice() {
+        _uiState.update { it.copy(concernNotice = false) }
     }
 
     /** Cambiar la dificultad reinicia la conversación con la pareja. */
@@ -116,7 +124,9 @@ class ChatViewModel @Inject constructor(
                     analysis = null,
                     analysisError = null,
                     errorMessage = null,
-                    safetyNotice = null
+                    safetyNotice = null,
+                    concernNotice = false,
+                    concernShown = false
                 )
             }
         }
@@ -149,6 +159,8 @@ class ChatViewModel @Inject constructor(
                             isSending = false,
                             errorMessage = null,
                             safetyNotice = notice,
+                            concernNotice = it.concernNotice || (notice == null && !it.isPartner && outcome.riskLevel == "concern" && !it.concernShown),
+                            concernShown = it.concernShown || (!it.isPartner && outcome.riskLevel == "concern"),
                             redFlags = if (outcome.redFlags.isNotEmpty()) {
                                 it.redFlags + (outcome.message.id to outcome.redFlags)
                             } else {

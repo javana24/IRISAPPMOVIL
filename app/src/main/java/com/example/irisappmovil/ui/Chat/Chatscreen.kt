@@ -170,6 +170,9 @@ fun ChatScreen(
                     notice = uiState.safetyNotice,
                     onDismiss = { viewModel.dismissSafetyBanner() }
                 )
+                if (uiState.concernNotice && uiState.safetyNotice == null) {
+                    ConcernNoticeCard(onDismiss = { viewModel.dismissConcernNotice() })
+                }
                 LazyColumn(
                     modifier = Modifier
                         .weight(1f)
@@ -491,6 +494,41 @@ private fun DifficultySelector(selected: PartnerDifficulty, onSelect: (PartnerDi
         }
         Spacer(Modifier.height(6.dp))
         Text(selected.description, color = colors.onSurfaceDim, style = IrisTheme.typography.bodySmall)
+    }
+}
+
+/** Aviso suave (ámbar) cuando el consejero detecta señales de control, sin llegar a la alarma. */
+@Composable
+private fun ConcernNoticeCard(onDismiss: () -> Unit) {
+    val colors = IrisTheme.colors
+    val amber = Color(0xFFFFB830)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(amber.copy(alpha = 0.14f))
+            .border(1.dp, amber.copy(alpha = 0.5f), RoundedCornerShape(14.dp))
+            .padding(14.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("⚠ SEÑAL DE ALERTA", color = amber, fontWeight = FontWeight.Black, style = IrisTheme.typography.labelSmall, modifier = Modifier.weight(1f))
+            Text(
+                "✕",
+                color = colors.onSurfaceDim,
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .clickable(onClick = onDismiss)
+                    .padding(horizontal = 8.dp, vertical = 2.dp)
+            )
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Lo que describes tiene señales de control que conviene no pasar por alto. No es culpa tuya. " +
+                "Si quieres hablarlo con profesionales, el 016 es gratuito, confidencial y atiende 24 h (también por WhatsApp: 600 000 016).",
+            color = colors.onSurface,
+            style = IrisTheme.typography.bodySmall
+        )
     }
 }
 
